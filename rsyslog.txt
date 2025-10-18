@@ -1,0 +1,158 @@
+module(load="moduleName")
+
+
+		omdtls:
+			action(
+				type="omdtls"
+				target="server_ip"
+				port="udp_open_port_default"
+			)
+		=============================================
+		omfile:
+			action(
+				type="omfile"
+				Template="template_name/OR/default_rsyslog_template"
+				addLF="on/OR/off => (line feed)"
+				derCreateMode="0mmm" # 1m:for user, 2m: for user group, 3m: for other users, 4:read(r) , 2:write(w), 1:execute(x), 0:no permissions
+				fileCreateMode="0mmm"
+				fileOwner="+userName" #in /etc/shadow or passwd Content( /etc/passwd holds general user information, while /etc/shadow stores encrypted password hashes and related security parameters. )
+				fileOwnerNum="+userNumber" #userID
+				fileGroup= "+group" #/etc/gshadow
+				fileGroupNum= "+group_number"
+				
+				file= "/dir/+file_name"
+				
+			)
+
+		=============================================
+		builtin:omfwd :
+			action(
+				type="omfwd"
+				target="server_ip"
+							=== OR ===
+						target=[
+						        "syslog1.example.net",
+						        "syslog2.example.net",
+						        "syslog3.example.net"
+						    ]
+							==========
+				port="portNumber" ##default => 514
+				protocol="tcp/OR/udp"
+				queue.type="linkedList"  # Prevent blocking if the remote server is down
+			)
+			------------------------------
+				legacy:
+					tcp: facility.priority @@serverIP:PORT
+					udp: facility.priority @serverIP:PORT
+
+		=============================================
+		ommysql:
+			action(
+				type="ommysql"
+				server="server_ip"
+				serverport="open_mysql_server_port"
+				db="syslog_db_on_mysq_server" 
+				uid="user_on_mysql_server" 
+				pwd="user_password_on_mysql_server"
+			)
+		
+		omprog:
+
+			action(
+			       type="omprog"
+			       binary="/usr/libexec/rsyslog/log.sh p1 p2 --param3=\"value 3\""
+			       template="RSYSLOG_TraditionalFileFormat"
+			)
+			----------------TELEGRAM SEND LOG--------------
+				#!/bin/bash
+				TOKEN="your_bot_token"
+				CHAT_ID="your_chat_id"
+				MESSAGE="$1"
+
+				LOCK_FILE="/tmp/telegram_alert.lock"
+
+				# تحقق إذا تم إرسال تنبيه من قبل
+				if [ ! -f "$LOCK_FILE" ]; then
+					  curl -s -X POST https://api.telegram.org/bot$TOKEN/sendMessage -d chat_id=$CHAT_ID -d text="$MESSAGE"
+					  touch $LOCK_FILE  # أنشئ ملف القفل
+				fi
+
+
+
+----------------------------------------------------------------------------------
+
+input modules:
+
+		imfile:
+			input(
+				type="imfile"
+				File="file.path" #WildCards:/var/log/*.log 
+				Tag="comment: "
+				Facility="+facility" #https://en.wikipedia.org/wiki/Syslog
+				Severity="+priority"
+
+			)
+
+		imtcp:
+			input(
+				type="imtcp" port="514"
+			)
+		
+		imudp:
+			input(
+				type="imudp" port=["10514","10515","10516"]
+				inputname="" inputname.appendPort="on"
+			)
+
+
+
+
+================================================================================
+rsyslog properties:
+		$msg 
+			for processed rsyslog message (contain +'string', ....)
+		
+		$hostname 
+			message came from specific source (== '+server_ip')
+			LIKE($fromhost, $fromhost-ip($fromhost-port))
+		
+		$syslogtag
+			tag you but for input module
+		
+		$programname
+			for programs (contains , startswith)
+
+		$syslogfacility , $syslogfacility-text
+			for num of facility, or name of the facility
+		
+		$syslogseverity , $syslogseverity-text, $syslogpriority, $syslogpriority-text
+			for num of priority, or name of serverity
+		
+		$app-name
+			Carries the APP-NAME header field defined in RFC 5424 Section 6.2.5.
+		
+		$procid
+			process ID
+
+		
+================================================================================
+variables:
+		$ ---> $. -> for simple var
+				EX: set $.name = 'hamada'
+				    set $.num1 = 1
+				    set $.num1 = $.num1 + 1
+				    reset $.num1 = 5
+				    unset $.num1
+		       $! -> for json 
+				EX: $.x!var = 'simple string 1'
+				    $.x!var2 = 'simple string 2'
+				    $.x!var3 = $.x!var1
+				    foreach ($.y in $.x!var3) do {}
+		
+	
+conversion:
+		mail.info   /var/log/maillog
+		===
+		if prifilt("mail.info") then {
+ 			    action(type="omfile" file="/var/log/maillog")
+		}
