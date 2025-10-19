@@ -1,0 +1,68 @@
+########################
+# MODULES
+########################
+module(load="imfile")       # For reading files like /var/log/auth.log
+module(load="imuxsock")     # For receiving system logs (from /dev/log)
+module(load="omfile")       # For writing filtered logs to files
+
+########################
+# RULESET FOR SSH LOGS
+########################
+ruleset(name="sshd_checker") {
+
+    # Only handle messages related to sshd
+    if ($programname == "sshd") or ($msg contains_i "sshd") then {
+
+        # Case 1: SSH authentication errors (priority auth.err)
+        if prifilt("auth.err") then {
+            action(
+                type="omfile"
+                file="/home/sasa/logsTest/ssh_error_logs.log"
+                fileCreateMode="0640"
+                addLF="on"
+            )
+        }
+
+        # Case 2: Accepted connections (case-insensitive)
+        else if ($msg contains_i "accepted") then {
+            action(
+                type="omfile"
+                file="/home/sasa/logsTest/ssh_accepted_logs.log"
+                fileCreateMode="0640"
+                addLF="on"
+            )
+        }
+
+        # Case 3: Anything else related to sshd
+        else {
+            action(
+                type="omfile"
+                file="/home/sasa/logsTest/ssh_misc_logs.log"
+                fileCreateMode="0640"
+                addLF="on"
+            )
+        }
+    }
+}
+
+########################
+# INPUT SECTION
+########################
+input(
+    type="imfile"
+    File="/var/log/auth.log"
+    Tag="sshd"
+    Ruleset="sshd_checker"
+)
+
+########################
+# GLOBAL FILTER FOR ALL AUTH ERRORS (not only sshd)
+########################
+if prifilt("auth.err") then {
+    action(
+        type="omfile"
+        file="/home/sasa/logsTest/errors_logs.log"
+        fileCreateMode="0640"
+        addLF="on"
+    )
+}
