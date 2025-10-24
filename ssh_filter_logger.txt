@@ -1,3 +1,7 @@
+####   INPUT ----> parse -----> output(action ---> TEMPLATE)
+
+
+
 ########################
 # MODULES
 ########################
@@ -39,7 +43,7 @@ ruleset(name="sshd_checker") {
                 type="omfile"
                 file="/home/sasa/logsTest/ssh_misc_logs.log"
                 fileCreateMode="0640"
-                addLF="on"
+                
             )
         }
     }
@@ -63,6 +67,7 @@ if prifilt("auth.err") then {
         type="omfile"
         file="/home/sasa/logsTest/errors_logs.log"
         fileCreateMode="0640"
-        addLF="on"
+        
     )
 }
+
