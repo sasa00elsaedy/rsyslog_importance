@@ -1,4 +1,4 @@
-####   INPUT ----> parse -----> output(action ---> TEMPLATE)
+####   INPUT ---->Ruleset(parse) -----> output(action ---> TEMPLATE)
 
 
 
@@ -70,4 +70,5 @@ if prifilt("auth.err") then {
         
     )
 }
+
 
