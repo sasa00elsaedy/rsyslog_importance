@@ -1,0 +1,12 @@
+#INSTALL DEBENDENCIES
+sudo apt install libmaxminddb-dev
+
+#enable ipv6 (tested on wsl)
+sudo apt -o Acquire::ForceIPv4=true update
+echo 'Acquire::ForceIPv4 "true";' | sudo tee /etc/apt/apt.conf.d/99force-ipv4
+
+#to install modules make this step first
+sudo apt-get install software-properties-common
+
+
+sudo apt-get install rsyslog-(missing module name)
